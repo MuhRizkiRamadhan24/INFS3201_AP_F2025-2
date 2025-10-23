@@ -1,0 +1,6 @@
+<h1>{{photo.title}}</h1>
+<p>{{photo.description}}</p>
+<img src="/{{photo.filename}}" style="max-width:300px;">
+<p>Albums: {{photo.albumNames}}</p>
+<p>Tags: {{photo.tags}}</p>
+<a href="/photo/{{photo.id}}/edit">Edit</a> | <a href="javascript:history.back()">Back</a>
