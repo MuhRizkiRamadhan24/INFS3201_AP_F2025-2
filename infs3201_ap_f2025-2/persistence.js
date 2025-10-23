@@ -1,6 +1,6 @@
 const { MongoClient, ObjectId } = require('mongodb')
 
-const url = '' // Atlas URI
+const url = 'mongodb://localhost:27017/'
 const dbName = 'assignment3'
 let db
 
