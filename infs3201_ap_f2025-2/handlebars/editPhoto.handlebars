@@ -1,7 +1,8 @@
-<h1>Edit Photo: {{photo.title}}</h1>
+<h1>Edit Photo</h1>
 <form method="POST">
     <label>Title: <input type="text" name="title" value="{{photo.title}}"></label><br>
     <label>Description: <input type="text" name="description" value="{{photo.description}}"></label><br>
     <button type="submit">Submit</button>
 </form>
-<a href="/photo/{{photo.id}}">Cancel</a>
+<a href="javascript:history.back()">Cancel</a>
+

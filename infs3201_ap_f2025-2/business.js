@@ -8,7 +8,7 @@ async function getPhotoDetails(photoId) {
     if (photoDetails) {
         const albumNames = [];
         for (let aid of photoDetails.albums) {
-            const album = await persistence.getAlbumDetails(aid);
+            const album = await persistence.getAlbumById(aid);
             if (album) albumNames.push(album.name);
         }
         photoDetails.albumNames = albumNames;
@@ -24,12 +24,19 @@ async function updatePhoto(photoId, title, description) {
 }
 
 /**
- * Get album by name.
+ * Get album details by ID.
  */
-async function getAlbumDetailsByName(name) {
-    return await persistence.getAlbumByName(name);
+async function getAlbumDetails(id) {
+    return await persistence.getAlbumDetails(Number(id));
 }
 
+/**
+ * Get album details by name.
+ */
+async function getAlbumDetailsByName(name) {
+    const albums = await persistence.getAllAlbums();
+    return albums.find(a => a.name === name);
+}
 
 /**
  * Get all photos in an album.
@@ -39,22 +46,28 @@ async function getPhotosInAlbum(albumId) {
 }
 
 /**
- * Add tag to a photo.
+ * Add a tag to a photo.
  */
 async function addTag(photoId, tag) {
     return await persistence.addTag(photoId, tag);
 }
 
+/**
+ * Get all albums.
+ */
 async function getAllAlbums() {
-    const databaseAlbums = await persistence.getAllAlbums();
-    return databaseAlbums;
+    return await persistence.getAllAlbums();
 }
 
 module.exports = {
     getPhotoDetails,
     updatePhoto,
+    getAlbumDetails,
     getAlbumDetailsByName,
     getPhotosInAlbum,
-    addTag
+    addTag,
+    getAllAlbums
 };
+
+
 
