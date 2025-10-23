@@ -1,7 +1,7 @@
 const { MongoClient, ObjectId } = require('mongodb')
 
 const url = 'mongodb+srv://Rizki:Rizki123@web2.tepl5ma.mongodb.net/?appName=Web2'
-const dbName = 'assignment3'
+const dbName = 'infs3201_fall2025'
 let db
 
 async function connect() {
