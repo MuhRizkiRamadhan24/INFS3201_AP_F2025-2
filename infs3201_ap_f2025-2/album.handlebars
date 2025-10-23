@@ -1,0 +1,7 @@
+<h1>{{album.name}} ({{photoCount}} {{#ifEquals photoCount 1}}photo{{else}}photos{{/ifEquals}})</h1>
+<ul>
+{{#each photos}}
+<li><a href="/photo/{{id}}">{{title}}</a></li>
+{{/each}}
+</ul>
+<a href="/">Back to Albums</a>

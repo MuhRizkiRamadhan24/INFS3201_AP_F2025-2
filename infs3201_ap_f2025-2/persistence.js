@@ -1,66 +1,86 @@
-const { MongoClient, ObjectId } = require('mongodb')
+const { MongoClient, ObjectId } = require('mongodb');
 
-const url = 'mongodb+srv://Rizki:Rizki123@web2.tepl5ma.mongodb.net/?appName=Web2'
-const dbName = 'infs3201_fall2025'
-let db
+const url = 'mongodb+srv://Rizki:Rizki123@web2.tepl5ma.mongodb.net/?appName=Web2';
+const dbName = 'infs3201_fall2025';
 
-async function connect() {
+let db;
+
+async function connectDB() {
     if (!db) {
-        const client = await MongoClient.connect(url, { useUnifiedTopology: true })
-        db = client.db(dbName)
+        const client = new MongoClient(url);
+        await client.connect();
+        db = client.db(dbName);
     }
-    return db
+    return db;
 }
 
-// Get photo by ID
+/**
+ * Get photo details by ID.
+ */
 async function getPhotoDetails(photoId) {
-    const database = await connect()
-    const photo = await database.collection('photos').findOne({ _id: ObjectId(photoId) })
-    return photo
+    const database = await connectDB();
+    const photo = await database.collection('photos').findOne({ id: Number(photoId) });
+    return photo;
 }
 
-// Get all photos in an album
-async function getPhotosInAlbum(albumId) {
-    const database = await connect()
-    const photos = await database.collection('photos').find({ albums: ObjectId(albumId) }).toArray()
-    return photos
-}
-
-// Get album by ID
-async function getAlbumDetails(albumId) {
-    const database = await connect()
-    const album = await database.collection('albums').findOne({ _id: ObjectId(albumId) })
-    return album
-}
-
-// Get album by name
-async function getAlbumDetailsByName(name) {
-    const database = await connect()
-    const album = await database.collection('albums').findOne({ name: name })
-    return album
-}
-
-// Update photo
+/**
+ * Update a photo's title and description.
+ */
 async function updatePhoto(photoId, title, description) {
-    const database = await connect()
+    const database = await connectDB();
     const result = await database.collection('photos').updateOne(
-        { _id: ObjectId(photoId) },
+        { id: Number(photoId) },
         { $set: { title, description } }
-    )
-    return result.modifiedCount > 0
+    );
+    return result.modifiedCount === 1;
 }
 
-// Add tag
+/**
+ * Get album details by ID.
+ */
+async function getAlbumDetails(albumId) {
+    const database = await connectDB();
+    return await database.collection('albums').findOne({ id: Number(albumId) });
+}
+
+/**
+ * Get album details by name.
+ */
+async function getAlbumDetailsByName(name) {
+    return await persistence.getAlbumDetailsByName(name);
+}
+
+async function getAllAlbums() {
+    const db = await connectDB();
+    return await db.collection('albums').find().toArray();
+}
+
+/**
+ * Get all photos in an album.
+ */
+async function getPhotosInAlbum(albumId) {
+    const database = await connectDB();
+    return await database.collection('photos').find({ albums: Number(albumId) }).toArray();
+}
+
+/**
+ * Add a tag to a photo.
+ */
 async function addTag(photoId, tag) {
-    const database = await connect()
+    const database = await connectDB();
     const result = await database.collection('photos').updateOne(
-        { _id: ObjectId(photoId), tags: { $ne: tag } },
-        { $push: { tags: tag } }
-    )
-    return result.modifiedCount > 0
+        { id: Number(photoId) },
+        { $addToSet: { tags: tag.toLowerCase() } }
+    );
+    return result.modifiedCount === 1;
 }
 
 module.exports = {
-    getPhotoDetails, getPhotosInAlbum, getAlbumDetails,
-    getAlbumDetailsByName, updatePhoto, addTag
-}
+    getPhotoDetails,
+    updatePhoto,
+    getAlbumDetails,
+    getAlbumDetailsByName,
+    getPhotosInAlbum,
+    addTag
+};
+

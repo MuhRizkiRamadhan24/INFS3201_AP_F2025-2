@@ -1,53 +1,103 @@
-const express = require('express');
-const exphbs = require('express-handlebars');
-const path = require('path');
-const business = require('./business')
+const prompt = require('prompt-sync')();
+const business = require('./business');
 
-const app = express();
+/**
+ * Convert ISO date format into readable format
+ * @param {*} iso 
+ * @returns English description of the date
+ */
+function formatDate(iso) {
+    const date = new Date(iso);
+    return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+}
 
-// --- Handlebars setup ---
-app.engine('handlebars', exphbs.engine({ layout: undefined }));
-app.set('view engine', 'handlebars');
-app.set('views', path.join(__dirname, 'views'));
+/**
+ * Display details of a photo
+ */
+async function findPhoto() {
+    console.log('\n\n');
+    let pid = Number(prompt('Photo ID? '));
+    let photoDetails = await business.getPhotoDetails(pid);
+    if (photoDetails) {
+        console.log(`Filename: ${photoDetails.filename}`);
+        console.log(` Title: ${photoDetails.title}`);
+        console.log(`  Date: ${formatDate(photoDetails.date)}`);
+        console.log(`Albums: ${photoDetails.albumNames.join(', ')}`);
+        console.log(`  Tags: ${photoDetails.tags.join(', ')}`);
+    } else {
+        console.log('!!! Photo not found');
+    }
+    console.log('\n\n');
+}
 
-// --- Middleware to handle form submissions ---
-app.use(express.urlencoded({ extended: true }));
+/**
+ * Prompt for a new value (reuses old value if blank)
+ */
+function promptTitle(fieldName, previousValue) {
+    let newValue = prompt(`Enter value for ${fieldName} [${previousValue}]: `);
+    return newValue !== "" ? newValue : previousValue;
+}
 
-// --- Serve static files (photos) ---
-app.use('/static', express.static(path.join(__dirname, 'photos')));
+/**
+ * Update photo title and description
+ */
+async function updatePhotoDetails() {
+    console.log('\n\n');
+    let pid = Number(prompt('Photo ID? '));
+    let photoDetails = await business.getPhotoDetails(pid);
+    if (!photoDetails) {
+        console.log("*** Photo not found ***");
+        return;
+    }
+    console.log("Press enter to reuse existing value.");
+    let newTitle = promptTitle('title', photoDetails.title);
+    let newDescription = promptTitle('description', photoDetails.description);
+    let result = await business.updatePhoto(pid, newTitle, newDescription);
+    console.log(result ? "Photo updated" : "!!! Problem updating");
+    console.log('\n\n');
+}
 
-// --- Routes ---
+/**
+ * Show photos in an album
+ */
+async function albumPhotos() {
+    console.log('\n\n');
+    let albumName = prompt('What is the name of the album? ');
+    let albumDetails = await business.getAlbumDetailsByName(albumName);
+    if (!albumDetails) {
+        console.log('!!! Album not found\n\n');
+        return;
+    }
+    let photoList = await business.getPhotosInAlbum(albumDetails.id);
+    console.log('filename,resolution,tags');
+    for (let p of photoList) {
+        console.log(`${p.filename},${p.resolution},${p.tags.join(':')}`);
+    }
+    console.log('\n\n');
+}
 
-// Landing page: list albums
-app.get('/', async (req, res) => {
-    const albums = await business.getAllAlbums();
-    res.render('index', { albums });
-});
+/**
+ * Add a tag to a photo
+ */
+async function tagPhoto() {
+    console.log('\n\n');
+    let pid = Number(prompt("What photo ID to tag? "));
+    let photoDetails = await business.getPhotoDetails(pid);
+    if (!photoDetails) {
+        console.log('!!!! Photo not found');
+        return;
+    }
+    let tag = prompt(`What tag to add (${photoDetails.tags.join(',')})? `).toLowerCase();
+    let result = await business.addTag(pid, tag);
+    console.log(result ? "Updated" : "Could not add tag");
+    console.log('\n\n');
+}
 
-// Album page: list photos in an album
-app.get('/album/:id', async (req, res) => {
-    const album = await business.getAlbumDetails(req.params.id);
-    const photos = await business.getPhotosInAlbum(req.params.id);
-    res.render('album', { album, photos });
-});
-
-// Photo details page
-app.get('/photo/:id', async (req, res) => {
-    const photo = await business.getPhotoDetails(req.params.id);
-    res.render('photoDetails', { photo });
-});
-
-// Edit photo page (GET)
-app.get('/photo/:id/edit', async (req, res) => {
-    const photo = await business.getPhotoDetails(req.params.id);
-    res.render('photoEdit', { photo });
-});
-
-// Edit photo form submission (POST) using PRG pattern
-app.post('/photo/:id/edit', async (req, res) => {
-    const { title, description } = req.body;
-    await business.updatePhoto(req.params.id, title, description);
-    res.redirect(`/photo/${req.params.id}`);
-});
-
-app.listen(8000);
+/**
+ * Display menu and get selection
+ */
+function getMenuSelec
