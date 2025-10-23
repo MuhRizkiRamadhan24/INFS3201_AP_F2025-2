@@ -1,66 +1,56 @@
 const express = require('express');
-const exphbs = require('express-handlebars');
+const { engine } = require('express-handlebars');
 const business = require('./business');
+const path = require('path');
 
 const app = express();
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('photos')); // serve photos folder
+const PORT = 8000;
 
-// Handlebars setup
-app.engine('handlebars', exphbs.engine({ layout: false }));
+// ✅ Use express-handlebars with helpers defined directly here
+app.engine('handlebars', engine({
+    defaultLayout: false,
+    helpers: {
+        eq: (a, b) => a === b, // <-- define "eq" helper here
+    }
+}));
+
 app.set('view engine', 'handlebars');
+app.set('views', path.join(__dirname, 'handlebars'));
 
-/**
- * Landing Page - list of albums
- */
+app.use(express.urlencoded({ extended: false }));
+app.use('/photos', express.static(path.join(__dirname, 'public/photos')));
+
 app.get('/', async (req, res) => {
-    const albums = await business.getAllAlbums(); // implement in business layer
-    res.render('landing', { albums });
+    const albums = await business.getAllAlbums();
+    res.render('index', { albums });
 });
 
-/**
- * Album Details Page - list photos in album
- */
 app.get('/album/:id', async (req, res) => {
-    const albumId = Number(req.params.id);
-    const album = await business.getAlbumDetails(albumId);
-    if (!album) return res.send('Album not found');
-    const photos = await business.getPhotosInAlbum(albumId);
-    res.render('album', { album, photos, photoCount: photos.length });
+    const album = await business.getAlbumDetails(Number(req.params.id));
+    const photos = await business.getPhotosInAlbum(Number(req.params.id));
+    res.render('album1', { album, photos, photoCount: photos.length });
 });
 
-/**
- * Photo Details Page
- */
+
 app.get('/photo/:id', async (req, res) => {
-    const photoId = Number(req.params.id);
-    const photo = await business.getPhotoDetails(photoId);
-    if (!photo) return res.send('Photo not found');
+    const photo = await business.getPhotoDetails(Number(req.params.id));
     res.render('photo', { photo });
 });
 
-/**
- * Edit Photo Page - form
- */
 app.get('/photo/:id/edit', async (req, res) => {
-    const photoId = Number(req.params.id);
-    const photo = await business.getPhotoDetails(photoId);
-    if (!photo) return res.send('Photo not found');
+    const photo = await business.getPhotoDetails(Number(req.params.id));
     res.render('edit', { photo });
 });
 
-/**
- * Handle Edit Photo Form - PRG pattern
- */
 app.post('/photo/:id/edit', async (req, res) => {
-    const photoId = Number(req.params.id);
     const { title, description } = req.body;
-    const success = await business.updatePhoto(photoId, title, description);
-    if (!success) return res.send('Error updating photo. Please go back.');
-    res.redirect(`/photo/${photoId}`);
+    const result = await business.updatePhoto(Number(req.params.id), title, description);
+    if (result) {
+        res.redirect(`/photo/${req.params.id}`);
+    } else {
+        res.send('Error updating photo. Go back and try again.');
+    }
 });
 
-// Start server
-app.listen(8000, () => {
-    console.log('Server running on http://localhost:8000');
-})
+app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
+
